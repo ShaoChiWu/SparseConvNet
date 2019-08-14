@@ -31,7 +31,7 @@ def get_iou(label_id, confusion):
 
     denom = (tp + fp + fn)
     if denom == 0:
-        return float('nan')
+        return (0, 0, 0)
     return (float(tp) / denom, tp, denom)
 
 def evaluate(pred_ids,gt_ids):
@@ -50,3 +50,5 @@ def evaluate(pred_ids,gt_ids):
         label_name = CLASS_LABELS[i]
         print('{0:<14s}: {1:>5.3f}   ({2:>6d}/{3:<6d})'.format(label_name, class_ious[label_name][0], class_ious[label_name][1], class_ious[label_name][2]))
     print('mean IOU', mean_iou)
+    
+ # we do not count the true negatives 

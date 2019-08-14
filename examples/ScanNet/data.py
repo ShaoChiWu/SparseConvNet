@@ -5,10 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 
 # Options
-scale=20  #Voxel size = 1/scale
-val_reps=1 # Number of test views, 1 or more
-batch_size=32
-elastic_deformation=False
+#scale=20  #Voxel size = 1/scale
+scale=50
+#val_reps=1 # Number of test views, 1 or more
+val_reps=3
+#batch_size=32
+batch_size=5
+elastic_deformation=True  ## Default: false
 
 import torch, numpy as np, glob, math, torch.utils.data, scipy.ndimage, multiprocessing as mp
 
@@ -20,11 +23,11 @@ full_scale=4096 #Input field size
 
 train,val=[],[]
 for x in torch.utils.data.DataLoader(
-        glob.glob('train/*.pth'),
+        glob.glob('/mnt/work/train/*.pth'),
         collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
     train.append(x)
 for x in torch.utils.data.DataLoader(
-        glob.glob('val/*.pth'),
+        glob.glob('/mnt/work/val/*.pth'),
         collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
     val.append(x)
 print('Training examples:', len(train))
@@ -60,7 +63,7 @@ def trainMerge(tbl):
         m*=scale
         theta=np.random.rand()*2*math.pi
         m=np.matmul(m,[[math.cos(theta),math.sin(theta),0],[-math.sin(theta),math.cos(theta),0],[0,0,1]])
-        a=np.matmul(a,m)
+        a=np.matmul(a,m)    # X-Y Plane Rotation about z-axis
         if elastic_deformation:
             a=elastic(a,6*scale//50,40*scale/50)
             a=elastic(a,20*scale//50,160*scale/50)
@@ -90,7 +93,7 @@ valLabels=[]
 for idx,x in enumerate(val):
     valOffsets.append(valOffsets[-1]+x[2].size)
     valLabels.append(x[2].astype(np.int32))
-valLabels=np.hstack(valLabels)
+valLabels=np.hstack(valLabels) ##list to array 
 
 def valMerge(tbl):
     locs=[]

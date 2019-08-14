@@ -15,20 +15,15 @@ remapper=np.ones(150)*(-100)
 for i,x in enumerate([1,2,3,4,5,6,7,8,9,10,11,12,14,16,24,28,33,34,36,39]):
     remapper[x]=i
 
-files=sorted(glob.glob('/home/carbon537/SparseConvNet/examples/ScanNet/test_t/*_vh_clean_2.ply'))
-files2=sorted(glob.glob('/home/carbon537/SparseConvNet/examples/ScanNet/test_t/*_vh_clean_2.labels.ply'))
-assert len(files) == len(files2)
+files=sorted(glob.glob('/mnt/work/val100/*_vh_clean_2.ply'))
 
 def f(fn):
-    fn2 = fn[:-3]+'labels.ply'
     a=plyfile.PlyData().read(fn)
     v=np.array([list(x) for x in a.elements[0]])
     coords=np.ascontiguousarray(v[:,:3]-v[:,:3].mean(0))
     colors=np.ascontiguousarray(v[:,3:6])/127.5-1
-    a=plyfile.PlyData().read(fn2)
-    w=remapper[np.array(a.elements[0]['label'])]
-    torch.save((coords,colors,w),fn[:-4]+'.pth')
-    print(fn, fn2)
+    torch.save((coords,colors),fn[:-4]+'.pth')
+    #print(fn, coords.shape, colors.shape)
 
 p = mp.Pool(processes=mp.cpu_count())
 p.map(f,files)

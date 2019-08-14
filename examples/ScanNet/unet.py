@@ -5,9 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 # Options
-m = 16 # 16 or 32
-residual_blocks=False #True or False
-block_reps = 1 #Conv block repetition factor: 1 or 2
+#m = 16 # 16 or 32
+m=32
+#residual_blocks=False #True or False
+residual_blocks=True
+#block_reps = 1 #Conv block repetition factor: 1 or 2
+block_reps=2
 
 import torch, data, iou
 import torch.nn as nn
@@ -20,7 +23,7 @@ import math
 import numpy as np
 
 use_cuda = torch.cuda.is_available()
-exp_name='unet_scale20_m16_rep1_notResidualBlocks'
+exp_name='unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation'
 
 class Model(nn.Module):
     def __init__(self):

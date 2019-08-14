@@ -17,7 +17,7 @@ residual_blocks=True
 block_reps=2
 
 import torch
-import test_iou as iou
+#import test_iou as iou
 import test_data as data
 import torch.nn as nn
 import torch.optim as optim
@@ -28,9 +28,10 @@ import os, sys, glob
 import math
 import numpy as np
 import torchvision.models as models
+import scipy.io as io
 
 use_cuda = torch.cuda.is_available()
-exp_name='test_unet_scale20_m16_rep1_notResidualBlocks'
+exp_name='val100_unet_scale20_m16_rep1_notResidualBlocks'
 
 class Model(nn.Module):
     def __init__(self):
@@ -51,41 +52,22 @@ unet=Model()
 if use_cuda:
     unet=unet.cuda()
     
-pthfile = r'test_model/unet_scale20_m16_rep1_notResidualBlocks-000000374-unet.pth'
+pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000000512-unet.pth'
 unet.load_state_dict(torch.load(pthfile))
 
-# training_epochs=512
-# training_epoch=scn.checkpoint_restore(unet,exp_name,'unet',use_cuda)
-# optimizer = optim.Adam(unet.parameters())
-# print('#classifer parameters', sum([x.nelement() for x in unet.parameters()]))
+with open("/mnt/work/val_list.txt",'r') as fp:
+    all_lines = fp.readlines()
 
-# for epoch in range(training_epoch, training_epochs+1):
-#     unet.train()
-#     stats = {}
-#     scn.forward_pass_multiplyAdd_count=0
-#     scn.forward_pass_hidden_states=0
-#     start = time.time()
-#     train_loss=0
-#     for i,batch in enumerate(data.train_data_loader):
-#         optimizer.zero_grad()
-#         if use_cuda:
-#             batch['x'][1]=batch['x'][1].cuda()
-#             batch['y']=batch['y'].cuda()
-#         predictions=unet(batch['x'])
-#         loss = torch.nn.functional.cross_entropy(predictions,batch['y'])
-#         train_loss+=loss.item()
-#         loss.backward()
-#         optimizer.step()
-#     print(epoch,'Train loss',train_loss/(i+1), 'MegaMulAdd=',scn.forward_pass_multiplyAdd_count/len(data.train)/1e6, 'MegaHidden',scn.forward_pass_hidden_states/len(data.train)/1e6,'time=',time.time() - start,'s')
-#     scn.checkpoint_save(unet,exp_name,'unet',epoch, use_cuda)
-
-#     if scn.is_power2(epoch):
-
-
-
+all_lines.sort()
+print(all_lines)
+    
 with torch.no_grad():
     unet.eval()
     store=torch.zeros(data.testOffsets[-1],20)
+    #print(store, store.shape)
+#     for i in range(100):
+#         print(data.testOffsets[i], data.testOffsets[100])
+    #import sys; sys.exit(0);
     scn.forward_pass_multiplyAdd_count=0
     scn.forward_pass_hidden_states=0
     start = time.time()
@@ -93,8 +75,24 @@ with torch.no_grad():
         for i,batch in enumerate(data.test_data_loader):
             if use_cuda:
                 batch['x'][1]=batch['x'][1].cuda()
-                batch['y']=batch['y'].cuda()
+                #print(len(batch['x'][1]))
+                #import sys; sys.exit(0);
             predictions=unet(batch['x'])
-            store.index_add_(0,batch['point_ids'],predictions.cpu())
-        print(rep,'time=',time.time() - start,'s')
-        iou.evaluate(store.max(1)[1].numpy(),data.testLabels)
+            #store.index_add_(0,batch['point_ids'],predictions.cpu())
+            ttt = predictions.cpu()
+            result = torch.max(ttt, 1)[1]
+            np.set_printoptions(formatter={'all':lambda x: str(x)}) #avoid sci. notation 
+            result_a = np.array(result)
+            np.savetxt(all_lines[i][:-1]+'.txt',result_a, fmt='%d')
+            
+            #print(ttt.shape, ttt[0][0].dtype)
+            #import sys; sys.exit(0);
+#             print(batch['point_ids'].max(), batch['point_ids'].min(), batch['point_ids'].shape)
+#             if i==2:
+#                 import sys; sys.exit(0);
+            #np.savetxt(str(i+707),store.max(1)[1].numpy())
+        print('time=',time.time() - start,'s')
+        #iou.evaluate(store.max(1)[1].numpy(),data.testLabels)
+        #print(type(store.max(1)[1]))
+        #print(type(store.max(1)[1].numpy()))
+        #np.savetxt('result',store.max(1)[1].numpy())
