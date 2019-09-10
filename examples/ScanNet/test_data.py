@@ -28,7 +28,7 @@ full_scale=4096 #Input field size
 test=[]
 
 test_list = []
-test_list = sorted(glob.glob('/mnt/work/val100/*.pth'))
+test_list = sorted(glob.glob('/work/carbon537/val331/*.pth'))
 
 for x in torch.utils.data.DataLoader(
         test_list,
@@ -40,7 +40,7 @@ print('Testing examples:', len(test))
 
 #import sys;sys.exit(0);
 
-MyFile=open('scene_order.txt','w')
+MyFile=open('scene_order_Val331_0.txt','w')
 test_list=map(lambda x:x+'\n', test_list)
 MyFile.writelines(test_list)
 MyFile.close()

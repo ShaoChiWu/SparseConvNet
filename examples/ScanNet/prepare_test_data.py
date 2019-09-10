@@ -15,7 +15,7 @@ remapper=np.ones(150)*(-100)
 for i,x in enumerate([1,2,3,4,5,6,7,8,9,10,11,12,14,16,24,28,33,34,36,39]):
     remapper[x]=i
 
-files=sorted(glob.glob('/mnt/work/val100/*_vh_clean_2.ply'))
+files=sorted(glob.glob('/work/carbon537/val331/*_vh_clean_2.ply'))
 
 def f(fn):
     a=plyfile.PlyData().read(fn)

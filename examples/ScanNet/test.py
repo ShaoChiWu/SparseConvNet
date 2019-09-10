@@ -31,7 +31,7 @@ import torchvision.models as models
 import scipy.io as io
 
 use_cuda = torch.cuda.is_available()
-exp_name='val100_unet_scale20_m16_rep1_notResidualBlocks'
+exp_name='val311_unet_scale50_m32_rep1_ResidualBlocks'
 
 class Model(nn.Module):
     def __init__(self):
@@ -55,7 +55,7 @@ if use_cuda:
 pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000000512-unet.pth'
 unet.load_state_dict(torch.load(pthfile))
 
-with open("/mnt/work/val_list.txt",'r') as fp:
+with open("val311.txt",'r') as fp:
     all_lines = fp.readlines()
 
 all_lines.sort()
