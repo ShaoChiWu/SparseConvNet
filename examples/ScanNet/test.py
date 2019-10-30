@@ -10,11 +10,11 @@
 
 # Options
 #m = 16 # 16 or 32
-m=32
+m = 16
 #residual_blocks=False #True or False
-residual_blocks=True
+residual_blocks = True
 #block_reps = 1 #Conv block repetition factor: 1 or 2
-block_reps=2
+block_reps = 1
 
 import torch
 #import test_iou as iou
@@ -31,7 +31,7 @@ import torchvision.models as models
 import scipy.io as io
 
 use_cuda = torch.cuda.is_available()
-exp_name='val311_unet_scale50_m32_rep1_ResidualBlocks'
+exp_name='area_6_test_s3dis_unet_scale20_m16_rep1'
 
 class Model(nn.Module):
     def __init__(self):
@@ -52,14 +52,16 @@ unet=Model()
 if use_cuda:
     unet=unet.cuda()
     
-pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000000512-unet.pth'
+pthfile = r'test_model/area_6_s3dis_unet_scale20_m16_rep1_elastic_residual_blocks-000000256-unet.pth'
 unet.load_state_dict(torch.load(pthfile))
 
-with open("val311.txt",'r') as fp:
+with open("/home/carbon537/Area_6_Scene.txt",'r') as fp:
     all_lines = fp.readlines()
 
-all_lines.sort()
 print(all_lines)
+
+#import sys ; sys.exit()
+
     
 with torch.no_grad():
     unet.eval()
@@ -83,7 +85,7 @@ with torch.no_grad():
             result = torch.max(ttt, 1)[1]
             np.set_printoptions(formatter={'all':lambda x: str(x)}) #avoid sci. notation 
             result_a = np.array(result)
-            np.savetxt(all_lines[i][:-1]+'.txt',result_a, fmt='%d')
+            np.savetxt('area_6_result/' + all_lines[i][:-1] + '.txt',result_a, fmt='%d')
             
             #print(ttt.shape, ttt[0][0].dtype)
             #import sys; sys.exit(0);
