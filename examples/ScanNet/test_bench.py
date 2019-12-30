@@ -31,7 +31,7 @@ import torchvision.models as models
 import scipy.io as io
 
 use_cuda = torch.cuda.is_available()
-exp_name='test_unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000001465-unet.pth'
+exp_name='test_w_unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000001890-unet.pth'
 
 class Model(nn.Module):
     def __init__(self):
@@ -52,7 +52,7 @@ unet=Model()
 if use_cuda:
     unet=unet.cuda()
     
-pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000001465-unet.pth'
+pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000001890-unet.pth'
 unet.load_state_dict(torch.load(pthfile))
 
 with open("scene_order.txt",'r') as fp:
@@ -62,6 +62,10 @@ all_lines.sort()
 print(all_lines)
 
 #import sys; sys.exit(0);
+
+avgHeights = torch.tensor([0., 0., 0.9983, 0.7615, 0.6757, 0.6576, 0.7369, 1.1313, 1.3664, 1.1504, 1.7234, 0.9957, 0.8069, 1.3108, 0.9460, 1.0056, 0.5083, 0.9097, 0.3493, 0.])
+
+sd = 1.2
 
 with torch.no_grad():
     unet.eval()
@@ -80,14 +84,26 @@ with torch.no_grad():
                 #print(len(batch['x'][1]))
                 #import sys; sys.exit(0);
             predictions=unet(batch['x'])
-            #store.index_add_(0,batch['point_ids'],predictions.cpu())
-            ttt = predictions.cpu()
-            result = torch.max(ttt, 1)[1]
-            np.set_printoptions(formatter={'all':lambda x: str(x)}) #avoid sci. notation 
-            result_a = np.array(result)
-            print('hihi')
-            #np.savetxt(str(i+707)+'.txt',result_a, fmt='%d')
-            np.savetxt('scene0'+str(i+707)+'_00.txt',result_a, fmt='%d')
+            store.index_add_(0,batch['point_ids'],predictions.cpu())
+        realHeights_matrix = np.tile(data.valHeights, (20, 1)).transpose() ## Prior
+        realHeights = torch.from_numpy(realHeights_matrix) ## Prior
+        dist = (realHeights[:]-avgHeights)**2 ## Prior
+        final = torch.exp(-(dist/(2*sd)))/(np.sqrt(sd)*np.sqrt(2*math.pi)) ## Prior
+        final[:,0] = 0.3
+        final[:,1] = 0.3
+        final[:,19] = 0.5
+        ttt = torch.mul(store, final)
+        result = torch.max(ttt, 1)[1]
+        np.set_printoptions(formatter={'all':lambda x: str(x)}) #avoid sci. notation 
+        result_a = np.array(result)
+        correct_label = np.array([1,2,3,4,5,6,7,8,9,10,11,12,14,16,24,28,33,34,36,39])
+        correct_label = correct_label[result_a]
+        print('hihi')
+        #np.savetxt(str(i+707)+'.txt',result_a, fmt='%d')
+        j = 0
+        for i in range(100):
+            np.savetxt('scene0'+str(i+707)+'_00.txt',correct_label[j:j+data.testNum[i+1]], fmt='%d')
+            j += data.testNum[i+1]
             
             #print(ttt.shape, ttt[0][0].dtype)
             #import sys; sys.exit(0);

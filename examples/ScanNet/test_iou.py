@@ -6,7 +6,7 @@
 
 import torch, numpy as np
 
-    
+
 CLASS_LABELS = ['wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window', 'bookshelf', 'picture', 'counter', 'desk', 'curtain', 'refrigerator', 'shower curtain', 'toilet', 'sink', 'bathtub', 'otherfurniture']
 
 
@@ -53,4 +53,4 @@ def evaluate(pred_ids,gt_ids):
             print('{0:<14s}: {1:>5.3f}   ({2:>6d}/{3:<6d})'.format(label_name, class_ious[label_name][0], class_ious[label_name][1], class_ious[label_name][2]))
         else:
             print('{0:<14s}: {1}'.format(label_name, 'missing'))
-    print('mean IOU', mean_iou)
+    print('mean IOU', mean_iou) 

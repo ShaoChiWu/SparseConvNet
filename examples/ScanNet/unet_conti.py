@@ -23,7 +23,7 @@ import math
 import numpy as np
 
 use_cuda = torch.cuda.is_available()
-exp_name='unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation'
+exp_name='s3dis_unet_scale20_m16_rep1'
 
 class Model(nn.Module):
     def __init__(self):
@@ -43,8 +43,11 @@ class Model(nn.Module):
 unet=Model()
 if use_cuda:
     unet=unet.cuda()
+    
+pthfile = r's3dis_unet_scale20_m16_rep1-000000512-unet.pth'
+unet.load_state_dict(torch.load(pthfile))
 
-training_epochs=2048
+training_epochs=1024
 training_epoch=scn.checkpoint_restore(unet,exp_name,'unet',use_cuda)
 optimizer = optim.Adam(unet.parameters())
 print('#classifer parameters', sum([x.nelement() for x in unet.parameters()]))
@@ -69,7 +72,7 @@ for epoch in range(training_epoch, training_epochs+1):
     print(epoch,'Train loss',train_loss/(i+1), 'MegaMulAdd=',scn.forward_pass_multiplyAdd_count/len(data.train)/1e6, 'MegaHidden',scn.forward_pass_hidden_states/len(data.train)/1e6,'time=',time.time() - start,'s')
     scn.checkpoint_save(unet,exp_name,'unet',epoch, use_cuda)
 
-    if epoch%100==1:
+    if epoch%2 == 0:
         with torch.no_grad():
             unet.eval()
             store=torch.zeros(data.valOffsets[-1],20)

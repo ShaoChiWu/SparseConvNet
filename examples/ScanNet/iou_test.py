@@ -12,7 +12,8 @@ residual_blocks=True
 #block_reps = 1 #Conv block repetition factor: 1 or 2
 block_reps=2
 
-import torch, data, iou
+import torch, iou
+import iou_data as data
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
@@ -23,7 +24,7 @@ import math
 import numpy as np
 
 use_cuda = torch.cuda.is_available()
-exp_name='unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation'
+exp_name='val_iou'
 
 class Model(nn.Module):
     def __init__(self):
@@ -39,37 +40,22 @@ class Model(nn.Module):
         x=self.sparseModel(x)
         x=self.linear(x)
         return x
+#print(len(data.val[0]), data.val[0])  
 
+#import sys; sys.exit()
 unet=Model()
 if use_cuda:
     unet=unet.cuda()
+    
+pthfile = r'test_model/unet_scale50_m32_rep1_ResidualBlocks_elastic_deformation-000001890-unet.pth'
+unet.load_state_dict(torch.load(pthfile))
 
-training_epochs=2048
-training_epoch=scn.checkpoint_restore(unet,exp_name,'unet',use_cuda)
-optimizer = optim.Adam(unet.parameters())
-print('#classifer parameters', sum([x.nelement() for x in unet.parameters()]))
+avgHeights = torch.tensor([0., 0., 0.9983, 0.7615, 0.6757, 0.6576, 0.7369, 1.1313, 1.3664, 1.1504, 1.7234, 0.9957, 0.8069, 1.3108, 0.9460, 1.0056, 0.5083, 0.9097, 0.3493, 0.])
 
-for epoch in range(training_epoch, training_epochs+1):
-    unet.train()
-    stats = {}
-    scn.forward_pass_multiplyAdd_count=0
-    scn.forward_pass_hidden_states=0
-    start = time.time()
-    train_loss=0
-    for i,batch in enumerate(data.train_data_loader):
-        optimizer.zero_grad()
-        if use_cuda:
-            batch['x'][1]=batch['x'][1].cuda()
-            batch['y']=batch['y'].cuda()
-        predictions=unet(batch['x'])
-        loss = torch.nn.functional.cross_entropy(predictions,batch['y'])
-        train_loss+=loss.item()
-        loss.backward()
-        optimizer.step()
-    print(epoch,'Train loss',train_loss/(i+1), 'MegaMulAdd=',scn.forward_pass_multiplyAdd_count/len(data.train)/1e6, 'MegaHidden',scn.forward_pass_hidden_states/len(data.train)/1e6,'time=',time.time() - start,'s')
-    scn.checkpoint_save(unet,exp_name,'unet',epoch, use_cuda)
+sd = 1.2
 
-    if epoch%100==1:
+while True:
+    while True:
         with torch.no_grad():
             unet.eval()
             store=torch.zeros(data.valOffsets[-1],20)
@@ -83,5 +69,24 @@ for epoch in range(training_epoch, training_epochs+1):
                         batch['y']=batch['y'].cuda()
                     predictions=unet(batch['x'])
                     store.index_add_(0,batch['point_ids'],predictions.cpu())
-                print(epoch,rep,'Val MegaMulAdd=',scn.forward_pass_multiplyAdd_count/len(data.val)/1e6, 'MegaHidden',scn.forward_pass_hidden_states/len(data.val)/1e6,'time=',time.time() - start,'s')
+                    
+                    #print(realHeights.size())
+                    #print(avgHeights.size())
+                    #print(store.size())
+                    #dist = store
+                    #for i in range(dist.shape[0]):
+                    #dist = (realHeights[i]-avgHeights)**2 ## Prior
+                    #final = torch.exp(-(dist/(2*sd)))/(np.sqrt(sd)*np.sqrt(2*math.pi)) ## Prior
+                    #store = torch.mul(store, final) ## Prior
+                realHeights_matrix = np.tile(data.valHeights, (20, 1)).transpose() ## Prior
+                realHeights = torch.from_numpy(realHeights_matrix) ## Prior
+                dist = (realHeights[:]-avgHeights)**2 ## Prior
+                final = torch.exp(-(dist/(2*sd)))/(np.sqrt(sd)*np.sqrt(2*math.pi)) ## Prior
+                print(final)
+                final[:,0] = 0.3
+                final[:,1] = 0.3
+                final[:,19] = 0.5
+                store = torch.mul(store, final) ## Prior
                 iou.evaluate(store.max(1)[1].numpy(),data.valLabels)
+        break
+    break

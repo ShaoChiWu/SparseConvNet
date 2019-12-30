@@ -10,17 +10,17 @@
 
 # Options
 #scale=20  #Voxel size = 1/scale
-scale = 20
+scale=50
 #val_reps=1 # Number of test views, 1 or more
-test_reps = 1
+test_reps=1
 #batch_size=32
-batch_size = 1
-elastic_deformation = False
+batch_size=1
+elastic_deformation=False
 
 import torch, numpy as np, glob, math, torch.utils.data, scipy.ndimage, multiprocessing as mp
 
-dimension = 3
-full_scale = 4096 #Input field size
+dimension=3
+full_scale=4096 #Input field size
 
 # Class IDs have been mapped to the range {0,1,...,19}
 # NYU_CLASS_IDS = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39])
@@ -28,7 +28,7 @@ full_scale = 4096 #Input field size
 test=[]
 
 test_list = []
-test_list = sorted(glob.glob('/work/carbon537/S3DIS_data_final/val/Area_6_no_label/*.pth'))
+test_list = sorted(glob.glob('/work/carbon537/scannet_raw/scans_test/*/*.pth'))
 
 for x in torch.utils.data.DataLoader(
         test_list,
@@ -40,21 +40,31 @@ print('Testing examples:', len(test))
 
 #import sys;sys.exit(0);
 
-MyFile=open('area_6_test_s3dis_scene_order.txt','w')
+MyFile=open('scene_order.txt','w')
 test_list=map(lambda x:x+'\n', test_list)
 MyFile.writelines(test_list)
 MyFile.close()
 
-# import sys; sys.exit()
+#import sys;sys.exit(0);
 
 testOffsets=[0]
+valHeights=[]
+testNum=[0]
 for idx,x in enumerate(test):
     testOffsets.append(testOffsets[-1]+len(x[1]))
+    valHeights.append(x[0][:,2].astype(np.float32))
+    testNum.append(x[0].shape[0])
 #    print(testOffsets[-1]+x[1].size)
 #     if idx == 3:
 #         import sys;sys.exit(0);
 #print(testOffsets, len(testOffsets))
 #import sys;sys.exit(0);
+valHeights=np.hstack(valHeights)
+testNum=np.hstack(testNum)
+#print(valHeights)
+print(testNum)
+
+#import sys; sys.exit()
 
 def testMerge(tbl):
     locs=[]

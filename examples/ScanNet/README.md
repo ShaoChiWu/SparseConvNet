@@ -10,6 +10,7 @@ To train a small U-Net with 5cm-cubed sparse voxels:
 5. Run 'python unet.py'
 
 You can train a bigger/more accurate network by changing `m` / `block_reps` / `residual_blocks` / `scale` / `val_reps` in unet.py / data.py, e.g.
+
 ```
 m=32 # Wider network
 block_reps=2 # Deeper network
